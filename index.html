@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>A Special Question ❤️</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700;800;900&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html {
+      width: 100%;
+      min-height: 100%;
+      background: #000;
+      color: #fff;
+    }
+    body {
+      width: 100%;
+      min-height: 100%;
+      background: #000;
+      color: #fff;
+      overflow-x: hidden;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* ── Scroll container (accelerated scroll height) ── */
+    #scroll-container {
+      position: relative;
+      height: 450vh;
+    }
+    
+    /* Fixed canvas always covers viewport smoothly */
+    #canvas-wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+    }
+
+    /* ── Loader ── */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0c;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease, visibility 0.5s;
+    }
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .lheart {
+      font-size: 3.5rem;
+      animation: heartbeat 0.8s ease-in-out infinite;
+    }
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.25); }
+    }
+    .ltxt {
+      font-family: 'Outfit', sans-serif;
+      color: rgba(255, 255, 255, 0.85);
+      margin-top: 16px;
+      font-size: 1rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    #lbar-wrap {
+      width: 180px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      margin-top: 16px;
+      overflow: hidden;
+    }
+    #lbar {
+      height: 100%;
+      width: 0%;
+      background: #ff2e63;
+      border-radius: 999px;
+      transition: width 0.15s ease-out;
+    }
+
+    /* ── Scroll Hint ── */
+    #scroll-hint {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      z-index: 50;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+    #scroll-hint.gone {
+      opacity: 0;
+    }
+    .sh-text {
+      font-size: 0.75rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #ffffff;
+      font-weight: 700;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+    }
+    .sh-arrow {
+      width: 20px;
+      height: 20px;
+      border-right: 2.5px solid #fff;
+      border-bottom: 2.5px solid #fff;
+      transform: rotate(45deg);
+      animation: bounceArrow 1.5s ease-in-out infinite;
+    }
+    @keyframes bounceArrow {
+      0%, 100% { transform: rotate(45deg) translate(0, 0); opacity: 0.7; }
+      50% { transform: rotate(45deg) translate(6px, 6px); opacity: 1; }
+    }
+
+    /* ── Proposal Overlay (Smooth, slower float-in, transparent background) ── */
+    #proposal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 36px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1), transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(50px);
+      z-index: 100;
+      background: transparent;
+    }
+    #proposal.on {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateY(0);
+    }
+
+    /* Portfolio "Hi, I'm" typography style: Geist, ultra-bold, tight tracking, crisp white, NO black outline */
+    .ptxt {
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: clamp(2.5rem, 7vw, 5.8rem);
+      font-weight: 900;
+      color: #ffffff;
+      text-align: center;
+      padding: 0 24px;
+      line-height: 1.1;
+      letter-spacing: -0.035em;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.65);
+      animation: gentleFloat 3.5s ease-in-out infinite;
+    }
+    @keyframes gentleFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 90px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    /* Red YES button: solid red, NO white outline, NO glow, NO ring emoji */
+    #yes-btn {
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: clamp(1.15rem, 2.6vw, 1.55rem);
+      font-weight: 800;
+      padding: 16px 56px;
+      background: #e60026;
+      color: #ffffff;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+      transition: transform 0.2s ease, background 0.2s ease;
+      z-index: 105;
+    }
+    #yes-btn:hover {
+      transform: scale(1.08);
+      background: #ff1a40;
+    }
+
+    /* Red framed NO button: smooth dodging transition, zero glow/trace on click */
+    #no-btn {
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+      font-weight: 800;
+      padding: 15px 48px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #ff1a40;
+      border: 2.5px solid #ff1a40;
+      border-radius: 999px;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      position: fixed;
+      white-space: nowrap;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      box-shadow: none;
+      transition: left 0.32s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.32s cubic-bezier(0.2, 0.9, 0.3, 1);
+      z-index: 110;
+    }
+    #no-btn:hover,
+    #no-btn:focus,
+    #no-btn:active,
+    #no-btn:focus-visible {
+      outline: none;
+      box-shadow: none;
+      background: rgba(0, 0, 0, 0.75);
+      color: #ff1a40;
+      border: 2.5px solid #ff1a40;
+      transform: none;
+    }
+
+    /* ── Thank You Screen ── */
+    #thankyou {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(160, 0, 45, 0.9) 0%, rgba(10, 2, 6, 0.98) 75%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 300;
+      transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #thankyou.on {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .tytxt {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(3.2rem, 9.5vw, 7.8rem);
+      font-weight: 700;
+      color: #ffffff;
+      text-align: center;
+      padding: 0 24px;
+      line-height: 1.2;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
+      animation: floatThankyou 3.8s ease-in-out infinite;
+    }
+    @keyframes floatThankyou {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-16px) scale(1.02); }
+    }
+
+    /* ── Dedicated Mobile Screen Ratio Layout (Preserves PC desktop 100%) ── */
+    @media (max-width: 768px), (max-aspect-ratio: 1/1) {
+      .ptxt {
+        font-size: clamp(1.85rem, 7.5vw, 2.7rem);
+        padding: 0 16px;
+        line-height: 1.18;
+        letter-spacing: -0.025em;
+      }
+      .btn-row {
+        gap: 18px;
+        width: 92%;
+        max-width: 330px;
+        min-height: 65px;
+      }
+      #yes-btn {
+        font-size: 1.1rem;
+        padding: 13px 40px;
+      }
+      #no-btn {
+        font-size: 1rem;
+        padding: 12px 34px;
+      }
+      #scroll-hint {
+        bottom: 20px;
+      }
+      #scroll-hint .sh-text {
+        font-size: 0.68rem;
+      }
+      #thankyou .tytxt {
+        font-size: clamp(2.3rem, 11vw, 4rem);
+        padding: 0 16px;
+      }
+    }
+
+    /* ── Floating Hearts ── */
+    .heart {
+      position: fixed;
+      bottom: -60px;
+      animation: riseHeart linear infinite;
+      pointer-events: none;
+      z-index: 305;
+    }
+    @keyframes riseHeart {
+      0% {
+        transform: translateY(0) rotate(0deg) scale(0.6);
+        opacity: 0;
+      }
+      15% {
+        opacity: 0.9;
+      }
+      85% {
+        opacity: 0.8;
+      }
+      100% {
+        transform: translateY(-115vh) rotate(35deg) scale(1.1);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loader">
+  <div class="lheart">❤️</div>
+  <div class="ltxt">Just a moment...</div>
+  <div id="lbar-wrap"><div id="lbar"></div></div>
+</div>
+
+<!-- Fixed Canvas Background -->
+<div id="canvas-wrapper">
+  <canvas id="c"></canvas>
+</div>
+
+<!-- Scroll Track -->
+<div id="scroll-container"></div>
+
+<!-- Scroll Down Indicator -->
+<div id="scroll-hint">
+  <div class="sh-text">Scroll Down</div>
+  <div class="sh-arrow"></div>
+</div>
+
+<!-- Proposal Card -->
+<div id="proposal">
+  <div class="ptxt">WILL YOU MARRY ME?</div>
+  <div class="btn-row">
+    <button id="yes-btn">YES</button>
+    <button id="no-btn">NO</button>
+  </div>
+</div>
+
+<!-- Thank You Finale -->
+<div id="thankyou">
+  <div class="tytxt">THANK YOU<br/>MY LOVE 💕</div>
+</div>
+
+<script>
+// ── CONFIGURATION ─────────────────────────────────────────────────────────
+const TOTAL = 84;
+const SRC   = i => 'frames/frame-' + String(i).padStart(3, '0') + '.jpg';
+
+// ── CANVAS SETUP & RESIZING ───────────────────────────────────────────────
+const canvasWrapper = document.getElementById('canvas-wrapper');
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const frames = new Array(TOTAL).fill(null);
+window.frameImages = frames;
+let curIndex = 0;
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  draw(frames[curIndex]);
+}
+window.addEventListener('resize', resize);
+
+function draw(img) {
+  if (!img || !img.complete || !img.naturalWidth) return;
+  const cw = canvas.width;
+  const ch = canvas.height;
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+
+  let s;
+  // If mobile screen ratio (portrait mode or narrow screen width):
+  if (cw <= 768 || ch > cw) {
+    // Mobile ratio: fit the central 1080px action area cleanly so nothing is cut off
+    s = Math.min(cw / 1080, ch / ih);
+  } else {
+    // Desktop layout (100% untouched):
+    s = Math.max(cw / iw, ch / ih);
+  }
+
+  const dw = iw * s;
+  const dh = ih * s;
+  ctx.clearRect(0, 0, cw, ch);
+  ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+}
+
+// ── FAST LOADER ───────────────────────────────────────────────────────────
+const loader = document.getElementById('loader');
+const lbar   = document.getElementById('lbar');
+let loaderDismissed = false;
+
+function dismissLoader() {
+  if (loaderDismissed) return;
+  loaderDismissed = true;
+  loader.classList.add('hidden');
+  setTimeout(() => {
+    loader.style.display = 'none';
+  }, 500);
+}
+
+// Guarantee dismissal within 300ms max so the screen never gets stuck
+setTimeout(dismissLoader, 300);
+
+// Load frame 1 immediately
+const frame1 = new Image();
+frame1.onload = () => {
+  frames[0] = frame1;
+  draw(frame1);
+  dismissLoader();
+};
+frame1.src = SRC(1);
+
+// Background preload all remaining frames
+let loadedCount = 1;
+for (let i = 1; i < TOTAL; i++) {
+  const img = new Image();
+  img.onload = img.onerror = () => {
+    loadedCount++;
+    lbar.style.width = (loadedCount / TOTAL * 100) + '%';
+    if (loadedCount >= TOTAL) {
+      setTimeout(() => {
+        const wrap = document.getElementById('lbar-wrap');
+        if (wrap) wrap.style.display = 'none';
+      }, 500);
+    }
+  };
+  img.src = SRC(i + 1);
+  frames[i] = img;
+}
+
+// Initial canvas size
+resize();
+
+// ── SCROLL TO ANIMATE ─────────────────────────────────────────────────────
+const scrollHint = document.getElementById('scroll-hint');
+const proposal   = document.getElementById('proposal');
+let isProposalVisible = false;
+let noPositionInit    = false;
+let isScrollLocked    = false;
+
+function isMobileView() {
+  return window.innerWidth <= 768 || window.innerHeight > window.innerWidth;
+}
+
+function lockScroll() {
+  if (isScrollLocked) return;
+  isScrollLocked = true;
+
+  // Set and render the final frame statically
+  curIndex = TOTAL - 1;
+  const finalFrame = frames[TOTAL - 1];
+  if (finalFrame && finalFrame.complete) {
+    draw(finalFrame);
+  }
+  
+  // Set fallback background image directly on wrapper to guarantee it's never black
+  canvasWrapper.style.backgroundImage = `url('${SRC(TOTAL)}')`;
+  canvasWrapper.style.backgroundSize = isMobileView() ? 'contain' : 'cover';
+
+  // Scroll to bottom
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  window.scrollTo(0, max);
+
+  // Freeze scroll on document
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden';
+}
+
+// Block all scroll events once locked
+window.addEventListener('wheel', e => {
+  if (isScrollLocked) e.preventDefault();
+}, { passive: false });
+
+window.addEventListener('touchmove', e => {
+  if (isScrollLocked) e.preventDefault();
+}, { passive: false });
+
+window.addEventListener('keydown', e => {
+  if (isScrollLocked && ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' ', 'Space'].includes(e.key)) {
+    e.preventDefault();
+  }
+});
+
+function onScroll() {
+  if (isScrollLocked) {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    if (window.scrollY !== max) {
+      window.scrollTo(0, max);
+    }
+    return;
+  }
+
+  const st  = window.scrollY;
+  const max = document.getElementById('scroll-container').scrollHeight - window.innerHeight;
+  const pct = Math.min(Math.max(st / max, 0), 1);
+  const targetFrame = Math.min(Math.floor(pct * (TOTAL - 1)), TOTAL - 1);
+
+  // Pick target frame or closest available loaded frame
+  let best = targetFrame;
+  while (best > 0 && (!frames[best] || !frames[best].complete || !frames[best].naturalWidth)) {
+    best--;
+  }
+  if (best !== curIndex) {
+    curIndex = best;
+    draw(frames[best]);
+  }
+
+  // Hide scroll indicator on first scroll
+  if (st > 40) {
+    scrollHint.classList.add('gone');
+  } else {
+    scrollHint.classList.remove('gone');
+  }
+
+  // Once final image is reached, show proposal and lock scroll permanently
+  if (pct >= 0.98 && !isProposalVisible) {
+    isProposalVisible = true;
+    proposal.classList.add('on');
+    initNoBtn();
+    lockScroll();
+  }
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+
+// ── RUNAWAY NO BUTTON ─────────────────────────────────────────────────────
+const noBtn = document.getElementById('no-btn');
+
+function initNoBtn() {
+  if (noPositionInit) return;
+  noPositionInit = true;
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  if (isMobileView()) {
+    noBtn.style.left = (cx + 45) + 'px';
+    noBtn.style.top  = (cy + 42) + 'px';
+  } else {
+    noBtn.style.left = (cx + 90) + 'px';
+    noBtn.style.top  = (cy + 40) + 'px';
+  }
+}
+
+function dodgeCursor(pointerX, pointerY) {
+  if (!isProposalVisible) return;
+  const rect = noBtn.getBoundingClientRect();
+  const btnX = rect.left + rect.width / 2;
+  const btnY = rect.top + rect.height / 2;
+  const dx = pointerX - btnX;
+  const dy = pointerY - btnY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  const mob = isMobileView();
+  const threshold = mob ? 115 : 160;
+  const fleeDist = mob ? 125 : 200;
+  const margin = mob ? 14 : 24;
+
+  // Flee when cursor/touch comes within threshold
+  if (dist < threshold) {
+    const angle = Math.atan2(dy, dx);
+    let newX = btnX - Math.cos(angle) * fleeDist - rect.width / 2;
+    let newY = btnY - Math.sin(angle) * fleeDist - rect.height / 2;
+
+    // Keep inside screen view
+    newX = Math.max(margin, Math.min(window.innerWidth - rect.width - margin, newX));
+    newY = Math.max(margin, Math.min(window.innerHeight - rect.height - margin, newY));
+
+    noBtn.style.left = newX + 'px';
+    noBtn.style.top  = newY + 'px';
+  }
+}
+
+document.addEventListener('mousemove', e => dodgeCursor(e.clientX, e.clientY));
+document.addEventListener('touchmove', e => {
+  if (e.touches && e.touches[0]) {
+    dodgeCursor(e.touches[0].clientX, e.touches[0].clientY);
+  }
+}, { passive: true });
+document.addEventListener('touchstart', e => {
+  if (e.touches && e.touches[0]) {
+    dodgeCursor(e.touches[0].clientX, e.touches[0].clientY);
+  }
+}, { passive: true });
+
+noBtn.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+});
+
+noBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  noBtn.blur();
+  const margin = 50;
+  const rw = window.innerWidth - 180;
+  const rh = window.innerHeight - 100;
+  noBtn.style.left = (margin + Math.random() * rw) + 'px';
+  noBtn.style.top  = (margin + Math.random() * rh) + 'px';
+});
+
+// ── YES BUTTON CELEBRATION ────────────────────────────────────────────────
+const yesBtn   = document.getElementById('yes-btn');
+const thankyou = document.getElementById('thankyou');
+
+yesBtn.addEventListener('click', () => {
+  proposal.classList.remove('on');
+  noBtn.style.display = 'none';
+  thankyou.classList.add('on');
+  createHeartsBurst();
+});
+
+function createHeartsBurst() {
+  const emojis = ['❤️', '💖', '💕', '💗', '💝', '🌹', '✨'];
+  function spawnHeart() {
+    const el = document.createElement('div');
+    el.className = 'heart';
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.left = (Math.random() * 95) + 'vw';
+    el.style.fontSize = (1.5 + Math.random() * 2.2) + 'rem';
+    const dur = 4 + Math.random() * 4;
+    el.style.animationDuration = dur + 's';
+    el.style.animationDelay = (Math.random() * 1.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), (dur + 2) * 1000);
+  }
+  for (let i = 0; i < 40; i++) spawnHeart();
+  const interval = setInterval(spawnHeart, 350);
+  setTimeout(() => clearInterval(interval), 12000);
+}
+</script>
+</body>
+</html>

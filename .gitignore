@@ -1,0 +1,9 @@
+# Archives
+*.zip
+
+# Unused frame sets
+images/
+
+# System files
+.DS_Store
+Thumbs.db
